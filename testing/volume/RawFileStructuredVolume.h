@@ -21,6 +21,19 @@
 #include <algorithm>
 #include <fstream>
 
+
+#include "./dcm/data_element.h"
+#include "./dcm/data_sequence.h"
+#include "./dcm/data_set.h"
+#include "./dcm/dicom_file.h"
+#include "./dcm/logger.h"
+#include "./dcm/visitor.h"
+
+#include <dirent.h> 
+#include <algorithm> 
+#include <experimental/filesystem>
+
+
 using namespace ospcommon;
 
 namespace openvkl {
