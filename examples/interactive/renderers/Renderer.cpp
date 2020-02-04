@@ -135,6 +135,8 @@ namespace openvkl {
     void Renderer::renderFrame()
     {
       auto fbDims = pixelIndices.dimensions();
+      size_t red_min = (fbDims.y/2)*fbDims.x;
+      size_t red_max = red_min+fbDims.x;
 
       for (int i = 0; i < spp; ++i) {
         float accumScale = 1.f / (frameID + 1);
@@ -147,8 +149,9 @@ namespace openvkl {
 
           Ray ray = computeRay(screen);
 
-          vec3f color =
-              renderPixel(ray, vec4i(pixel.x, pixel.y, frameID, fbDims.x));
+          vec3f color(1.f,1.f,1.f);
+          if(i < red_min || i> red_max)
+            color = renderPixel(ray, vec4i(pixel.x, pixel.y, frameID, fbDims.x));
 
           float &ar = accum_r[i];
           float &ag = accum_g[i];

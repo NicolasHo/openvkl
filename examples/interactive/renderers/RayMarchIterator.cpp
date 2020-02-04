@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "RayMarchIterator.h"
+#include "ospcommon/tasking/parallel_for.h"
 // ispc
 #include "RayMarchIterator_ispc.h"
 
@@ -35,8 +36,85 @@ namespace openvkl {
       ispc::RayMarchIterator_set(ispcEquivalent, samplingRate);
     }
 
+
+    void RayMarchIterator::renderFrame()
+    {
+      auto fbDims = pixelIndices.dimensions();
+
+      for (int i = 0; i < spp; ++i) {
+        float accumScale = 1.f / (frameID + 1);
+
+        tasking::parallel_for((size_t)fbDims.x, [&](size_t i) {
+
+          auto pixel = pixelIndices.reshape(i + (fbDims.y/2)*fbDims.x);
+
+          vec2f screen(pixel.x * rcp(float(fbDims.x)),
+                       pixel.y * rcp(float(fbDims.y)));
+
+          Ray ray = computeRay(screen);
+
+          tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
+          {
+            size_t id = i + j*fbDims.x;
+
+            framebuffer[id] = vec3f(0.f, 0.f, 0.f);// * accumScale;
+
+            // linear to sRGB color space conversion
+            framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
+                                 pow(framebuffer[id].y, 1.f / 2.2f),
+                                 pow(framebuffer[id].z, 1.f / 2.2f));
+          });
+
+          vec3f color = renderPixel(ray, vec4i(pixel.x, pixel.y, fbDims.y, fbDims.x));
+
+
+
+
+        });
+
+        frameID++;
+      }
+    }
+
+#ifndef RAYMARCHER_ITERATOR_TESTS
     vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
     {
+
+      ray.t = intersectRayBox(ray.org, ray.dir, volumeBounds);
+      ray.org = ray.org + ray.dir*ray.t.lower;
+
+      if (ray.t.empty())
+        return vec3f(0.f);
+
+      ray.dir = (ray.dir * (ray.t.upper-ray.t.lower)) / sampleID[2];
+
+      tasking::parallel_for((size_t)sampleID[2], [&](size_t j) 
+      {
+        size_t id = sampleID[0] + j*(size_t)sampleID[3];
+        float sample;
+
+        const vec3f c = ray.org + j* ray.dir;
+        sample        = vklComputeSample(volume, (const vkl_vec3f *)&c);
+        vec4f sampleColorAndOpacity = sampleTransferFunction(sample);
+        vec3f pixel_color = vec3f(sampleColorAndOpacity) * sampleColorAndOpacity.w;
+
+        framebuffer[id] = vec3f(pixel_color.x, pixel_color.y, pixel_color.z);
+
+        // linear to sRGB color space conversion
+        framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
+                              pow(framebuffer[id].y, 1.f / 2.2f),
+                              pow(framebuffer[id].z, 1.f / 2.2f));
+      });
+
+      return vec3f(0.f);
+    }
+
+#else
+    vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
+    { 
+      int inter_loop = 1;
+      size_t id = sampleID[0];
+
       vec3f color(0.f);
       float alpha = 0.f;
 
@@ -56,7 +134,7 @@ namespace openvkl {
       // the current ray interval
       VKLInterval interval;
 
-      while (vklIterateInterval(&iterator, &interval) && alpha < 0.99f) {
+      while (vklIterateInterval(&iterator, &interval) && inter_loop < sampleID[2]) {
         const float nominalSamplingDt = interval.nominalDeltaT / samplingRate;
 
         // initial sub interval, based on our renderer-defined sampling rate
@@ -67,7 +145,7 @@ namespace openvkl {
 
         // integrate as long as we have valid sub intervals and are not
         // fully opaque
-        while (subInterval.upper - subInterval.lower > 0.f && alpha < 0.99f) {
+        while (subInterval.upper - subInterval.lower > 0.f && inter_loop < sampleID[2]) {
           const float t  = 0.5f * (subInterval.lower + subInterval.upper);
           const float dt = subInterval.upper - subInterval.lower;
 
@@ -83,8 +161,20 @@ namespace openvkl {
 
           sampleColorAndOpacity = sampleColorAndOpacity * clampedOpacity;
 
-          color = color + (1.f - alpha) * vec3f(sampleColorAndOpacity);
-          alpha = alpha + (1.f - alpha) * clampedOpacity;
+          color = /*color + (1.f - alpha) */ vec3f(sampleColorAndOpacity);
+          //alpha = alpha + (1.f - alpha) * clampedOpacity;
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+          framebuffer[id] = vec3f(color.x, color.y, color.z);
+
+          // linear to sRGB color space conversion
+          framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
+                                pow(framebuffer[id].y, 1.f / 2.2f),
+                                pow(framebuffer[id].z, 1.f / 2.2f));
+
+          id += (size_t)sampleID[3];
+          inter_loop += 1;
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
           // compute next sub interval
           subInterval.lower = subInterval.upper;
@@ -95,6 +185,7 @@ namespace openvkl {
 
       return color;
     }
+#endif
 
   }  // namespace examples
 }  // namespace openvkl

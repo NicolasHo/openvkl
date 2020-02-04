@@ -82,7 +82,7 @@ namespace openvkl {
 
       // Render a frame //
 
-      void renderFrame();
+      virtual void renderFrame();
       void renderFrame_ispc();
 
      protected:
@@ -90,7 +90,7 @@ namespace openvkl {
 
       virtual vec3f renderPixel(Ray &ray, const vec4i &sampleID) = 0;
 
-      Ray computeRay(const vec2f &screenCoords) const;
+      virtual Ray computeRay(const vec2f &screenCoords) const;
 
       vec4f sampleTransferFunction(float value) const;
 

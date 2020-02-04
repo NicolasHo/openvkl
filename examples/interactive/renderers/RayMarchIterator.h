@@ -28,10 +28,29 @@ namespace openvkl {
 
       void commit() override;
 
+      void renderFrame() override;
+
+      Ray computeRay(const vec2f &screenCoords) const override;
+      
       vec3f renderPixel(Ray &ray, const vec4i &sampleID) override;
 
      private:
       float samplingRate{1.f};
+
+    };
+      
+    inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords) const
+    {
+      vec3f org = camPos;// + screenCoords.x * dir_du + screenCoords.y * dir_dv;
+      vec3f dir = dir_00 + screenCoords.x * dir_du + screenCoords.y * dir_dv;
+
+      Ray ray;
+
+      ray.org = org;
+      ray.dir = normalize(dir);
+      ray.t   = range1f(0.f, ospcommon::inf);
+
+      return ray;
     };
 
   }  // namespace examples
