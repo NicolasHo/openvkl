@@ -226,29 +226,6 @@ namespace openvkl {
 
 
 
-        imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
-        // Retrieve the first image (index = 0)
-        imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
-
-        // Retrieve the data handler
-        imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
-
-        for(std::uint32_t scanY(0); scanY != height; ++scanY)
-        {
-          for(std::uint32_t scanX(0); scanX != width; ++scanX)
-          {
-            // For monochrome images
-            std::int32_t luminance = dataHandler.getSignedLong(scanY * width + scanX);
-            //voxels[4*(scanY * width + scanX) + k] = luminance;
-            voxels[4*(scanY * width + scanX) + k] = (luminance >> 24) & 0xFF;
-            voxels[4*(scanY * width + scanX) + k +1] = (luminance >> 16) & 0xFF;
-            voxels[4*(scanY * width + scanX) + k +2] = (luminance >> 8) & 0xFF;
-            voxels[4*(scanY * width + scanX) + k +3] = luminance & 0xFF;
-          }
-        }
-        k += 4 * height * width;
-        
-
         // imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
         // // Retrieve the first image (index = 0)
         // imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
@@ -262,10 +239,35 @@ namespace openvkl {
         //   {
         //     // For monochrome images
         //     std::int32_t luminance = dataHandler.getSignedLong(scanY * width + scanX);
-        //     voxels[scanY * width + scanX + k] = (unsigned char) luminance;
+        //     //voxels[4*(scanY * width + scanX) + k] = luminance;
+        //     voxels[4*(scanY * width + scanX) + k] = (luminance >> 24) & 0xFF;
+        //     voxels[4*(scanY * width + scanX) + k +1] = (luminance >> 16) & 0xFF;
+        //     voxels[4*(scanY * width + scanX) + k +2] = (luminance >> 8) & 0xFF;
+        //     voxels[4*(scanY * width + scanX) + k +3] = luminance & 0xFF;
         //   }
         // }
-        // k += height * width;
+        // k += 4 * height * width;
+        
+
+        imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
+        // Retrieve the first image (index = 0)
+        imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+        // Retrieve the data handler
+        imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
+
+        for(std::uint32_t scanY(0); scanY != height; ++scanY)
+        {
+          for(std::uint32_t scanX(0); scanX != width; ++scanX)
+          {
+            // For monochrome images
+            float luminance = static_cast<float>(dataHandler.getSignedLong(scanY * width + scanX));
+        
+            memcpy(&voxels[4*(scanY * width + scanX) + k], &luminance, sizeof(float));
+
+          }
+        }
+        k += 4 * height * width;
 
 
         // throw std::runtime_error("error reading raw volume file");

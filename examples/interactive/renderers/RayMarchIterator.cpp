@@ -41,6 +41,23 @@ namespace openvkl {
     {
       auto fbDims = pixelIndices.dimensions();
 
+      vec2f screen(fbDims.x/2 * rcp(float(fbDims.x)),
+                   fbDims.y/2 * rcp(float(fbDims.y)));
+
+      Ray initRay = computeRay(screen);
+
+      initRay.t = intersectRayBox(initRay.org, initRay.dir, volumeBounds);
+
+      if (initRay.t.empty())
+        return;      
+        
+      initRay.org = initRay.org + initRay.dir*initRay.t.lower;
+      float coef = (initRay.t.upper-initRay.t.lower) / fbDims.y;
+      initRay.dir = initRay.dir * coef;
+      initRay.org = initRay.org - initRay.dir;
+
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
       for (int i = 0; i < spp; ++i) {
         float accumScale = 1.f / (frameID + 1);
 
@@ -51,13 +68,13 @@ namespace openvkl {
           vec2f screen(pixel.x * rcp(float(fbDims.x)),
                        pixel.y * rcp(float(fbDims.y)));
 
-          Ray ray = computeRay(screen);
+          Ray ray = computeRay(screen, initRay.org, coef);
 
           tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
           {
             size_t id = i + j*fbDims.x;
 
-            framebuffer[id] = vec3f(0.f, 0.f, 0.f);// * accumScale;
+            framebuffer[id] = vec3f(1.f, 0.f, 0.f);// * accumScale;
 
             // linear to sRGB color space conversion
             framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
@@ -79,14 +96,13 @@ namespace openvkl {
 #ifndef RAYMARCHER_ITERATOR_TESTS
     vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
     {
-
       ray.t = intersectRayBox(ray.org, ray.dir, volumeBounds);
-      ray.org = ray.org + ray.dir*ray.t.lower;
+      // ray.org = ray.org + ray.dir*ray.t.lower;
 
       if (ray.t.empty())
         return vec3f(0.f);
 
-      ray.dir = (ray.dir * (ray.t.upper-ray.t.lower)) / sampleID[2];
+      // ray.dir = (ray.dir * (ray.t.upper-ray.t.lower)) / sampleID[2];
 
       tasking::parallel_for((size_t)sampleID[2], [&](size_t j) 
       {

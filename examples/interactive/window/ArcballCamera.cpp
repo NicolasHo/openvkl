@@ -24,6 +24,8 @@ ArcballCamera::ArcballCamera(const box3f &worldBounds, const vec2i &windowSize)
       rotation(one)
 {
   resetCamera(worldBounds);
+  rotation = screenToArcball(vec2f(0,0.70f))  * rotation;
+  updateCamera();
 }
 
 void ArcballCamera::rotate(const vec2f &from, const vec2f &to)

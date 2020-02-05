@@ -31,6 +31,7 @@ namespace openvkl {
       void renderFrame() override;
 
       Ray computeRay(const vec2f &screenCoords) const override;
+      Ray computeRay(const vec2f &screenCoords, const vec3f &o, const float &c) const;
       
       vec3f renderPixel(Ray &ray, const vec4i &sampleID) override;
 
@@ -39,9 +40,22 @@ namespace openvkl {
 
     };
       
+    inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords, const vec3f &o, const float &c) const
+    {
+      vec3f dir = dir_00 + screenCoords.x * dir_du + screenCoords.y * dir_dv;
+
+      Ray ray;
+
+      ray.org = o;
+      ray.dir = normalize(dir) * c;
+      ray.t   = range1f(0.f, ospcommon::inf);
+
+      return ray;
+    };
+
     inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords) const
     {
-      vec3f org = camPos;// + screenCoords.x * dir_du + screenCoords.y * dir_dv;
+      vec3f org = camPos;
       vec3f dir = dir_00 + screenCoords.x * dir_du + screenCoords.y * dir_dv;
 
       Ray ray;
