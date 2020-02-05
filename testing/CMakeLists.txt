@@ -15,9 +15,12 @@
 ## ======================================================================== ##
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
-
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
+
+find_package(imebra REQUIRED)
+include_directories(${imebra_INCLUDE_DIRS})
+link_directories(${imebra_LIBRARY_DIRS})
 
 add_library(openvkl_testing INTERFACE)
 
@@ -29,6 +32,7 @@ target_link_libraries(openvkl_testing INTERFACE
   ${Boost_LIBRARIES}
   stdc++fs
   dcm
+  imebra
 )
 
 target_include_directories(openvkl_testing

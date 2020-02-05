@@ -95,8 +95,8 @@ namespace openvkl {
 
         const vec3f c = ray.org + j* ray.dir;
         sample        = vklComputeSample(volume, (const vkl_vec3f *)&c);
-        vec4f sampleColorAndOpacity = sampleTransferFunction(sample);
-        vec3f pixel_color = vec3f(sampleColorAndOpacity) * sampleColorAndOpacity.w;
+        // vec4f sampleColorAndOpacity = sampleTransferFunction(sample);
+        vec3f pixel_color = sample; //vec3f(sampleColorAndOpacity) * sampleColorAndOpacity.w;
 
         framebuffer[id] = vec3f(pixel_color.x, pixel_color.y, pixel_color.z);
 

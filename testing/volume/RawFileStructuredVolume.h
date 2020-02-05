@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <fstream>
 
+#include <imebra/imebra.h>
 
 #include "./dcm/data_element.h"
 #include "./dcm/data_sequence.h"
@@ -109,6 +110,23 @@ namespace openvkl {
       if(files.size() == 0)
         throw std::runtime_error("error no dicom file found");
 
+
+      /////////////////////////////////////////////////////////////////////////////////////////////
+
+      imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[1], 2048));
+      // Retrieve the first image (index = 0)
+      imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+      // Get the color space
+      std::string colorSpace = image.getColorSpace();
+
+      // Get the size in pixels
+      std::uint32_t width = image.getWidth();
+      std::uint32_t height = image.getHeight();
+      std::cout << colorSpace << " | width=" << width << " height="<< height << std::endl; 
+      
+      /////////////////////////////////////////////////////////////////////////////////////////////
+
       // loading of a random slice
       dcm::DicomFile dicom_file(files[0]);
 
@@ -186,26 +204,77 @@ namespace openvkl {
       int imageSize = this->dimensions.x*this->dimensions.y;
       uint i, k = 0;
 
+      std::uint32_t width = this->dimensions.x;
+      std::uint32_t height = this->dimensions.y;
+
       for (i=0; i<files.size(); i++)
       {  
-        dcm::DicomFile dicom_file(files[i]);
 
-        if (!dicom_file.Load()) {
-          throw std::runtime_error("error opening raw volume file");
-        }
+        // dcm::DicomFile dicom_file(files[i]);
 
-        const dcm::DataElement* element = dicom_file.Get(dcm::tags::kPixelData);
-        k = 0;
-        for (std::vector<char>::const_iterator j = element->buffer().begin(); j != element->buffer().end(); ++(++j))
+        // if (!dicom_file.Load()) {
+        //   throw std::runtime_error("error opening raw volume file");
+        // }
+
+        // const dcm::DataElement* element = dicom_file.Get(dcm::tags::kPixelData);
+        // k = 0;
+        // for (std::vector<char>::const_iterator j = element->buffer().begin(); j != element->buffer().end(); ++(++j))
+        // {
+        //   voxels[i*imageSize+k] = (unsigned char)i;
+        //   k += 1;
+        // }
+
+
+
+        imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
+        // Retrieve the first image (index = 0)
+        imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+        // Retrieve the data handler
+        imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
+
+        for(std::uint32_t scanY(0); scanY != height; ++scanY)
         {
-          voxels[i*imageSize+k] = (unsigned char)i;
-          k += 1;
+          for(std::uint32_t scanX(0); scanX != width; ++scanX)
+          {
+            // For monochrome images
+            std::int32_t luminance = dataHandler.getSignedLong(scanY * width + scanX);
+            //voxels[4*(scanY * width + scanX) + k] = luminance;
+            voxels[4*(scanY * width + scanX) + k] = (luminance >> 24) & 0xFF;
+            voxels[4*(scanY * width + scanX) + k +1] = (luminance >> 16) & 0xFF;
+            voxels[4*(scanY * width + scanX) + k +2] = (luminance >> 8) & 0xFF;
+            voxels[4*(scanY * width + scanX) + k +3] = luminance & 0xFF;
+          }
         }
+        k += 4 * height * width;
+        
+
+        // imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
+        // // Retrieve the first image (index = 0)
+        // imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+        // // Retrieve the data handler
+        // imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
+
+        // for(std::uint32_t scanY(0); scanY != height; ++scanY)
+        // {
+        //   for(std::uint32_t scanX(0); scanX != width; ++scanX)
+        //   {
+        //     // For monochrome images
+        //     std::int32_t luminance = dataHandler.getSignedLong(scanY * width + scanX);
+        //     voxels[scanY * width + scanX + k] = (unsigned char) luminance;
+        //   }
+        // }
+        // k += height * width;
+
+
         // throw std::runtime_error("error reading raw volume file");
         //std::cout << (i-1)*imageSize+k << std::endl;
       }
       
-      std::cout << (i-1)*imageSize+k << "/" << this->dimensions.long_product() << " voxels" << std::endl;
+      std::cout << "numValues:" << this->dimensions.long_product() << " sizeOfVKLDataType:" << sizeOfVKLDataType(voxelType) << " voxels:" << numValues *
+                                        sizeOfVKLDataType(voxelType) << std::endl;
+      std::cout << k << "/" << this->dimensions.long_product() << " voxels" << std::endl;
         
       return voxels;
     
