@@ -13,6 +13,7 @@
 ## See the License for the specific language governing permissions and      ##
 ## limitations under the License.                                           ##
 ## ======================================================================== ##
+
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 
 include_directories(${Boost_INCLUDE_DIRS})
@@ -20,11 +21,14 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 add_library(openvkl_testing INTERFACE)
 
+add_subdirectory(volume/dcm)
+
 target_link_libraries(openvkl_testing INTERFACE
   openvkl
   ospcommon::ospcommon
   ${Boost_LIBRARIES}
   stdc++fs
+  dcm
 )
 
 target_include_directories(openvkl_testing

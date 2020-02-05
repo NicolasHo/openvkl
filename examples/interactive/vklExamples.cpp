@@ -287,7 +287,12 @@ int main(int argc, const char **argv)
   std::shared_ptr<TestingVolume> testingVolume;
 
   if (!filename.empty()) {
-    std::cout << "filename:       " << filename << std::endl;
+    
+    if(std::experimental::filesystem::is_directory(std::experimental::filesystem::status(filename)))
+      std::cout << "directory:      " << filename << std::endl;
+    else
+      std::cout << "filename:       " << filename << std::endl;
+
     testingVolume = std::shared_ptr<RawFileStructuredVolume>(
         new RawFileStructuredVolume(filename,
                                     gridType,
@@ -295,6 +300,7 @@ int main(int argc, const char **argv)
                                     gridOrigin,
                                     gridSpacing,
                                     voxelType));
+
   } else {
     if (gridType == "structured_regular") {
       if (voxelType == VKL_UCHAR) {

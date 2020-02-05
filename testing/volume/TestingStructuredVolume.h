@@ -33,8 +33,6 @@ namespace openvkl {
                               const vec3f &gridSpacing,
                               VKLDataType voxelType);
 
-      TestingStructuredVolume();
-
       range1f getComputedValueRange() const override;
 
       vec3i getDimensions() const;
@@ -72,14 +70,6 @@ namespace openvkl {
           voxelType(voxelType)
     {
     }    
-    inline TestingStructuredVolume::TestingStructuredVolume()
-        : gridType("UNKNOWN"),
-          dimensions(vec3f(0,0,0)),
-          gridOrigin(vec3f(0,0,0)),
-          gridSpacing(vec3f(0,0,0)),
-          voxelType(VKL_UNKNOWN)
-    {
-    }
 
     inline range1f TestingStructuredVolume::getComputedValueRange() const
     {
