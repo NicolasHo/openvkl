@@ -100,6 +100,7 @@ namespace openvkl {
       vec3f dir_00;
       vec3f dir_du;
       vec3f dir_dv;
+      float fov;
 
       // Frame data //
 
@@ -108,6 +109,7 @@ namespace openvkl {
       ColorChannel accum_r;
       ColorChannel accum_g;
       ColorChannel accum_b;
+
       int spp{1};
       int frameID{0};
 

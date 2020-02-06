@@ -121,6 +121,12 @@ namespace openvkl {
       renderer->setIsovalues(isovalues);
     }
 
+    void VKLWindow::setFov(const float &_fov)
+    {
+      fov = _fov;
+      updateCamera();
+    }
+
     void VKLWindow::reshape(const vec2i &newWindowSize)
     {
       windowSize = newWindowSize;
@@ -141,7 +147,8 @@ namespace openvkl {
       renderer->setCamera(arcballCamera->eyePos(),
                           arcballCamera->lookDir(),
                           arcballCamera->upDir(),
-                          windowSize.x / float(windowSize.y));
+                          windowSize.x / float(windowSize.y),
+                          fov);
     }
 
   }  // namespace examples

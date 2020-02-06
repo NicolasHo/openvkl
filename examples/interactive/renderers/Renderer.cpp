@@ -56,6 +56,7 @@ namespace openvkl {
                              float fovy)
     {
       camPos = pos;
+      fov = fovy;
 
       dir_du = normalize(cross(dir, up));
       dir_dv = cross(dir_du, dir);

@@ -415,11 +415,22 @@ int main(int argc, const char **argv)
 
       glfwVKLWindow->setActiveRenderer(rendererType);
     }
-
     static int useISPC = 1;
     if (ImGui::Combo("OpenVKL API used", &useISPC, "C scalar\0ISPC\0\0")) {
       glfwVKLWindow->setUseISPC(useISPC);
       changed = true;
+    }
+
+    static float fov = 60;
+    if (ImGui::SliderFloat("fov", &fov, 1, 180)) {
+      glfwVKLWindow->setFov(fov);
+      renderer.commit();
+    }
+
+    static int nbrays = 64;
+    if (ImGui::SliderInt("nbrays", &nbrays, 64, 4096)) {
+      renderer.setParam<int>("nbrays", nbrays);
+      renderer.commit();
     }
 
     static int spp = 1;

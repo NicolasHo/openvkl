@@ -29,6 +29,8 @@ namespace openvkl {
     class VKLWindow
     {
      public:
+      float fov=60;
+      
       VKLWindow(const vec2i &windowSize,
                 VKLVolume volume,
                 std::string rendererType);
@@ -48,6 +50,8 @@ namespace openvkl {
       void setTransferFunction(const TransferFunction &transferFunction);
 
       void setIsovalues(const std::vector<float> &isovalues);
+
+      void setFov(const float &fov);
 
       void savePPM(const std::string &filename);
 
@@ -74,6 +78,7 @@ namespace openvkl {
       TransferFunction transferFunction;
 
       std::vector<float> isovalues{-1.f, 0.f, 1.f};
+
     };
 
   }  // namespace examples

@@ -31,22 +31,23 @@ namespace openvkl {
       void renderFrame() override;
 
       Ray computeRay(const vec2f &screenCoords) const override;
-      Ray computeRay(const vec2f &screenCoords, const vec3f &o, const float &c) const;
+      Ray computeRay(const vec2f &screenCoords, const float &c) const;
       
       vec3f renderPixel(Ray &ray, const vec4i &sampleID) override;
 
      private:
       float samplingRate{1.f};
-
+      Ray camera;
+      int nbrays=64;
     };
       
-    inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords, const vec3f &o, const float &c) const
+    inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords, const float &c) const
     {
       vec3f dir = dir_00 + screenCoords.x * dir_du + screenCoords.y * dir_dv;
 
       Ray ray;
 
-      ray.org = o;
+      ray.org = camera.org;
       ray.dir = normalize(dir) * c;
       ray.t   = range1f(0.f, ospcommon::inf);
 
