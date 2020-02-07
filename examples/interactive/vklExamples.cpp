@@ -35,6 +35,13 @@ bool addSamplingRateUI(GLFWVKLWindow &window)
 {
   auto &renderer = window.currentRenderer();
 
+  static int nbrays = 64;
+  if (ImGui::SliderInt("nbrays", &nbrays, 64, 4096)) {
+    renderer.setParam<int>("nbrays", nbrays);
+    renderer.commit();
+    return true;
+  }
+
   static float samplingRate = 1.f;
   if (ImGui::SliderFloat("samplingRate", &samplingRate, 0.01f, 4.f)) {
     renderer.setParam<float>("samplingRate", samplingRate);
@@ -424,12 +431,6 @@ int main(int argc, const char **argv)
     static float fov = 60;
     if (ImGui::SliderFloat("fov", &fov, 1, 180)) {
       glfwVKLWindow->setFov(fov);
-      renderer.commit();
-    }
-
-    static int nbrays = 64;
-    if (ImGui::SliderInt("nbrays", &nbrays, 64, 4096)) {
-      renderer.setParam<int>("nbrays", nbrays);
       renderer.commit();
     }
 

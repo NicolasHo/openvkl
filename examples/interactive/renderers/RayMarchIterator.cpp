@@ -60,36 +60,29 @@ namespace openvkl {
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       for (int i = 0; i < spp; ++i) {
-        float accumScale = 1.f / (frameID + 1);
+        // float accumScale = 1.f / (frameID + 1);
 
         // std::cout << nbrays << std::endl;
 
         tasking::parallel_for((size_t)fbDims.x, [&](size_t i) {
+          tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
+          {
+            size_t id = i + j*fbDims.x;
+            framebuffer[id] = vec3f(0.f, 0.f, 0.f);
+          });
+        });
 
-          auto pixel = pixelIndices.reshape(i + (fbDims.y/2)*fbDims.x);
+        tasking::parallel_for((size_t)nbrays, [&](size_t i) {
+
+          auto pixel = pixelIndices.reshape((i*fbDims.x/nbrays) + (fbDims.y/2)*fbDims.x);
 
           vec2f screen(pixel.x * rcp(float(fbDims.x)),
                        pixel.y * rcp(float(fbDims.y)));
 
           Ray ray = computeRay(screen, coef);
 
-          tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
-          {
-            size_t id = i + j*fbDims.x;
-
-            framebuffer[id] = vec3f(0.f, 0.f, 0.f);// * accumScale;
-
-            // linear to sRGB color space conversion
-            framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
-                                 pow(framebuffer[id].y, 1.f / 2.2f),
-                                 pow(framebuffer[id].z, 1.f / 2.2f));
-          });
-
           // vec3f color = renderPixel(ray, vec4i(pixel.x, pixel.y, fbDims.y, fbDims.x));
-          vec3f color = renderPixel(ray, vec4i(i, pixel.y, fbDims.x, fbDims.y));
-
-
-
+          vec3f color = renderPixel(ray, vec4i(i, pixel.y, nbrays, fbDims.y));
 
         });
 
@@ -101,7 +94,9 @@ namespace openvkl {
 #ifndef RAYMARCHER_ITERATOR_TESTS
     vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
     {
-      float r = (sampleID[0]%10 < 5 )?255:0;
+      auto fbDims = pixelIndices.dimensions();
+
+      float r = (sampleID[0]%10 < 5 )?((sampleID[0]%(sampleID[2]/2))/(sampleID[2]/2.0f)):0;
       float g = ((sampleID[0]+5)%10 < 5 && sampleID[0] < sampleID[2]/2)?255:0;
       float b = ((sampleID[0]+5)%10 < 5 && sampleID[0] > sampleID[2]/2)?255:0;
 
@@ -113,32 +108,20 @@ namespace openvkl {
       }
 
       ray.t = intersectRayBox(ray.org, ray.dir, volumeBounds);
-      // ray.org = ray.org + ray.dir*ray.t.lower;
 
       if (ray.t.empty())
         return vec3f(0.f);
 
-      // ray.dir = (ray.dir * (ray.t.upper-ray.t.lower)) / sampleID[2];
-
-      float angle = std::abs((((float)sampleID[0] / (float)sampleID[2] -0.5f) * fov) / 180.0 * M_PI);
-      // std::cout << sampleID[0] << " " << sin(angle) << std::endl;
-
-      int y = static_cast<int>(cos(angle)*(float)sampleID[3]-1);
-      int x = static_cast<int>(sin(angle)*(float)sampleID[3]-1);
-
-      int id = (sampleID[2]/2 + x) + y*sampleID[2];
-      // vec2i tmp = pixelIndices.reshape(id);
-      // std::cout << sampleID[0] << " x:" << x << " y:" << y << std::endl;
-      // std::cout << sampleID[0] << " x:" << tmp.x << " y:" << tmp.y << std::endl;
+      float angle = (((float)sampleID[0] / ((float)sampleID[2]-1) -0.5f) * fov)* M_PI / 180.0f;
 
       tasking::parallel_for(sampleID[3], [&](int j) 
       {
         int y = static_cast<int>(cos(angle)*(float)j);
         int x = static_cast<int>(sin(angle)*(float)j);
 
-        if(x < sampleID[2]/2 && x > -sampleID[2]/2)
+        if(x < fbDims.x/2 && x > -fbDims.x/2)
         {
-          int id = x + y*sampleID[2];
+          int id = x + fbDims.x/2 + y*fbDims.x;
 
           float sample;
 
@@ -146,9 +129,9 @@ namespace openvkl {
           sample        = vklComputeSample(volume, (const vkl_vec3f *)&c);
           vec3f pixel_color = sample;
 
-          // framebuffer[id] = vec3f(pixel_color.x, pixel_color.y, pixel_color.z);
+          framebuffer[id] = vec3f(pixel_color.x, pixel_color.y, pixel_color.z);
           // framebuffer[id] = vec3f(r, g + framebuffer[id].y, b + framebuffer[id].z);
-          framebuffer[id] = vec3f(r, g, b);
+          // framebuffer[id] = vec3f(r, g, b);
 
           // linear to sRGB color space conversion
           // framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
