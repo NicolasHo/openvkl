@@ -42,9 +42,23 @@ bool addSamplingRateUI(GLFWVKLWindow &window)
     return true;
   }
 
-  static float samplingRate = 1.f;
-  if (ImGui::SliderFloat("samplingRate", &samplingRate, 0.01f, 4.f)) {
-    renderer.setParam<float>("samplingRate", samplingRate);
+  static bool vRays = false;
+  if (ImGui::Checkbox("vRays", &vRays)) {
+    renderer.setParam<bool>("vRays", vRays);
+    renderer.commit();
+    return true;
+  }
+
+  static float blur = 0;
+  if (ImGui::SliderFloat("blur", &blur, 0.f, 10.f)) {
+    renderer.setParam<float>("blur", blur);
+    renderer.commit();
+    return true;
+  }
+
+  static float focal = 512;
+  if (ImGui::SliderFloat("focal", &focal, 0.f, 1024.f)) {
+    renderer.setParam<float>("focal", focal);
     renderer.commit();
     return true;
   }

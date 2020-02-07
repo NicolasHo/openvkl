@@ -124,7 +124,7 @@ namespace openvkl {
       std::uint32_t width = image.getWidth();
       std::uint32_t height = image.getHeight();
       std::cout << colorSpace << " | width=" << width << " height="<< height << std::endl; 
-      
+
       /////////////////////////////////////////////////////////////////////////////////////////////
 
       // loading of a random slice
@@ -134,6 +134,14 @@ namespace openvkl {
         throw std::runtime_error("error opening dicom file");
       }
 
+      std::string tmp;
+      if (dicom_file.GetString(0x00200013, &tmp))
+        std::cout << "InstanceNumber:" << tmp << std::endl;
+      if (dicom_file.GetString(0x00200012, &tmp))
+        std::cout << "Acquisition Number:" << tmp << std::endl;
+      if (dicom_file.GetString(0x00201002, &tmp))
+        std::cout << "InstanceNumber:" << tmp << std::endl; 
+      
       // setting the TestingStructuredVolume attributes
       std::uint16_t rows;
       std::uint16_t columns;
@@ -202,10 +210,12 @@ namespace openvkl {
 
       // loading voxels
       int imageSize = this->dimensions.x*this->dimensions.y;
-      uint i, k = 0;
 
       std::uint32_t width = this->dimensions.x;
       std::uint32_t height = this->dimensions.y;
+
+      uint i, k = 4 * height * width;
+      int imageNumber;
 
       for (i=0; i<files.size(); i++)
       {  
@@ -247,7 +257,20 @@ namespace openvkl {
         //   }
         // }
         // k += 4 * height * width;
-        
+
+        {
+          dcm::DicomFile dicom_file(files[i]);
+
+          if (!dicom_file.Load()) {
+            throw std::runtime_error("error opening dicom file");
+          }
+
+          std::string tmp;
+          if (dicom_file.GetString(0x00200013, &tmp))
+            imageNumber = std::stoi(tmp);
+            // std::cout << "InstanceNumber:" << tmp << std::endl;
+        }
+
 
         imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
         // Retrieve the first image (index = 0)
@@ -263,11 +286,10 @@ namespace openvkl {
             // For monochrome images
             float luminance = static_cast<float>(dataHandler.getSignedLong(scanY * width + scanX));
         
-            memcpy(&voxels[4*(scanY * width + scanX) + k], &luminance, sizeof(float));
+            memcpy(&voxels[4*(scanY * width + scanX) + ((imageNumber-1) * k)], &luminance, sizeof(float));
 
           }
         }
-        k += 4 * height * width;
 
 
         // throw std::runtime_error("error reading raw volume file");

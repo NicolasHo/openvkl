@@ -17,6 +17,8 @@
 #pragma once
 
 #include "Renderer.h"
+#include <random>
+
 
 namespace openvkl {
   namespace examples {
@@ -34,22 +36,44 @@ namespace openvkl {
       Ray computeRay(const vec2f &screenCoords, const float &c) const;
       
       vec3f renderPixel(Ray &ray, const vec4i &sampleID) override;
+      float random_float() const;
 
      private:
       float samplingRate{1.f};
       Ray camera;
       int nbrays=64;
+      bool vRays=false;
+
+      float hole=0;
+      float focal=512;
     };
       
+    inline float RayMarchIterator::random_float() const
+    {
+        static std::default_random_engine engine;
+        static std::uniform_real_distribution<float> uniform(0,1);
+        return uniform(engine);
+    }
+
     inline Ray RayMarchIterator::computeRay(const vec2f &screenCoords, const float &c) const
     {
+      static std::default_random_engine engine;
+      static std::uniform_real_distribution<float> uniform(0,1);
+
       vec3f dir = dir_00 + screenCoords.x * dir_du + screenCoords.y * dir_dv;
 
       Ray ray;
 
-      ray.org = camera.org;
-      ray.dir = normalize(dir) * c;
+      // ray.org = camera.org;
+      // ray.dir = normalize(dir) * c;
       ray.t   = range1f(0.f, ospcommon::inf);
+
+
+      float dx_aperture = (random_float() - 0.5f) * hole;
+      float dy_aperture = (random_float() - 0.5f) * hole;
+
+      ray.org = camera.org + vec3f(dx_aperture, dy_aperture, 0.0f);
+      ray.dir = normalize((camera.org + focal * normalize(dir) * c) - ray.org) * c;
 
       return ray;
     };

@@ -31,8 +31,11 @@ namespace openvkl {
     {
       Renderer::commit();
 
-      samplingRate = getParam<float>("samplingRate", 1.f);
-      nbrays       = getParam<int>("nbrays", 64);
+      hole    = getParam<float>("blur", 0);
+      focal   = getParam<float>("focal", 512);
+      nbrays  = getParam<int>("nbrays", 64);
+      vRays   = getParam<bool>("vRays", 0);
+      resetAccumulation();
 
       ispc::RayMarchIterator_set(ispcEquivalent, samplingRate);
     }
@@ -60,17 +63,17 @@ namespace openvkl {
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       for (int i = 0; i < spp; ++i) {
-        // float accumScale = 1.f / (frameID + 1);
-
-        // std::cout << nbrays << std::endl;
-
-        tasking::parallel_for((size_t)fbDims.x, [&](size_t i) {
-          tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
-          {
-            size_t id = i + j*fbDims.x;
-            framebuffer[id] = vec3f(0.f, 0.f, 0.f);
+        if (frameID == 0)
+        {
+          tasking::parallel_for((size_t)fbDims.x, [&](size_t i) {
+            tasking::parallel_for((size_t)fbDims.y, [&](size_t j) 
+            {
+              size_t id = i + j*fbDims.x;
+              framebuffer[id] = vec3f((j==(int)focal)?1.f:0.f, 0.f, 0.f);
+            });
           });
-        });
+
+        }
 
         tasking::parallel_for((size_t)nbrays, [&](size_t i) {
 
@@ -94,9 +97,11 @@ namespace openvkl {
 #ifndef RAYMARCHER_ITERATOR_TESTS
     vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
     {
+      float accumScale = 1.f / (frameID + 1);
       auto fbDims = pixelIndices.dimensions();
 
-      float r = (sampleID[0]%10 < 5 )?((sampleID[0]%(sampleID[2]/2))/(sampleID[2]/2.0f)):0;
+      // float r = (sampleID[0]%10 < 5 )?((sampleID[0]%(sampleID[2]/2))/(sampleID[2]/2.0f)):0;
+      float r = (sampleID[0]%10 < 5 )?255:0;
       float g = ((sampleID[0]+5)%10 < 5 && sampleID[0] < sampleID[2]/2)?255:0;
       float b = ((sampleID[0]+5)%10 < 5 && sampleID[0] > sampleID[2]/2)?255:0;
 
@@ -111,6 +116,9 @@ namespace openvkl {
 
       if (ray.t.empty())
         return vec3f(0.f);
+
+      // ray.t = intersectRayBox(ray.org, ray.dir, box3f(vec3f(250,250,0),vec3f(300,300,150)));
+      // int dist = min((int)sampleID[3], (int)ray.t.lower);
 
       float angle = (((float)sampleID[0] / ((float)sampleID[2]-1) -0.5f) * fov)* M_PI / 180.0f;
 
@@ -127,11 +135,13 @@ namespace openvkl {
 
           const vec3f c = ray.org + j* ray.dir;
           sample        = vklComputeSample(volume, (const vkl_vec3f *)&c);
+          //vec3f pixel_color = (1-accumScale) * framebuffer[id] + accumScale * sample;
           vec3f pixel_color = sample;
 
-          framebuffer[id] = vec3f(pixel_color.x, pixel_color.y, pixel_color.z);
-          // framebuffer[id] = vec3f(r, g + framebuffer[id].y, b + framebuffer[id].z);
-          // framebuffer[id] = vec3f(r, g, b);
+          if(vRays)
+            framebuffer[id] = vec3f(r, g, b);
+          else
+            framebuffer[id] =  (1-accumScale) * framebuffer[id] + accumScale * (pixel_color/255);
 
           // linear to sRGB color space conversion
           // framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
