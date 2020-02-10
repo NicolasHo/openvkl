@@ -26,6 +26,9 @@ add_library(openvkl_testing INTERFACE)
 
 add_subdirectory(volume/dcm)
 
+find_package(X11 REQUIRED)
+include_directories(${X11_INCLUDE_DIR})
+
 target_link_libraries(openvkl_testing INTERFACE
   openvkl
   ospcommon::ospcommon
@@ -33,6 +36,7 @@ target_link_libraries(openvkl_testing INTERFACE
   stdc++fs
   dcm
   imebra
+  ${X11_LIBRARIES}
 )
 
 target_include_directories(openvkl_testing

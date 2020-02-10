@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include <CImg.h>
+
 #include <imebra/imebra.h>
 
 #include "./dcm/data_element.h"
@@ -94,6 +96,9 @@ namespace openvkl {
       DIR           *dirp;
       struct dirent *directory;
 
+      int width;
+      int height;
+
       dirp = opendir(filename.c_str());
       if (dirp)
       {
@@ -108,59 +113,91 @@ namespace openvkl {
       }
 
       if(files.size() == 0)
-        throw std::runtime_error("error no dicom file found");
+      {
+        dirp = opendir(filename.c_str());
+        if (dirp)
+        {
+            while ((directory = readdir(dirp)) != NULL)
+            {
+              std::string file = filename + directory->d_name;
+              if(file.substr(file.find_last_of(".") + 1) == "jpg") 
+                files.push_back(file);
+            }
+
+            closedir(dirp);
+        }
+        if(files.size() == 0)
+          throw std::runtime_error("error no dicom files (or images) found");
+
+        cimg_library::CImg<unsigned char> image(files[0].c_str());
+        width = image.width();
+        height = image.height();
+        std::cout << "JPG | width=" << width << " height="<< height << std::endl; 
+      }
+      else
+      {
+        imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[1], 2048));
+        // Retrieve the first image (index = 0)
+        imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+        // Get the size in pixels
+        width = image.getWidth();
+        height = image.getHeight();
+        std::cout << "Dicom | width=" << width << " height="<< height << std::endl; 
+      }
+      
 
 
       /////////////////////////////////////////////////////////////////////////////////////////////
 
-      imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[1], 2048));
-      // Retrieve the first image (index = 0)
-      imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+      // imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[1], 2048));
+      // // Retrieve the first image (index = 0)
+      // imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
 
-      // Get the color space
-      std::string colorSpace = image.getColorSpace();
+      // // Get the color space
+      // std::string colorSpace = image.getColorSpace();
 
-      // Get the size in pixels
-      std::uint32_t width = image.getWidth();
-      std::uint32_t height = image.getHeight();
-      std::cout << colorSpace << " | width=" << width << " height="<< height << std::endl; 
+      // // Get the size in pixels
+      // std::uint32_t width = image.getWidth();
+      // std::uint32_t height = image.getHeight();
+      // std::cout << colorSpace << " | width=" << width << " height="<< height << std::endl; 
 
       /////////////////////////////////////////////////////////////////////////////////////////////
 
       // loading of a random slice
-      dcm::DicomFile dicom_file(files[0]);
+      // dcm::DicomFile dicom_file(files[0]);
 
-      if (!dicom_file.Load()) {
-        throw std::runtime_error("error opening dicom file");
-      }
+      // if (!dicom_file.Load()) {
+      //   throw std::runtime_error("error opening dicom file");
+      // }
 
-      std::string tmp;
-      if (dicom_file.GetString(0x00200013, &tmp))
-        std::cout << "InstanceNumber:" << tmp << std::endl;
-      if (dicom_file.GetString(0x00200012, &tmp))
-        std::cout << "Acquisition Number:" << tmp << std::endl;
-      if (dicom_file.GetString(0x00201002, &tmp))
-        std::cout << "InstanceNumber:" << tmp << std::endl; 
+      // std::string tmp;
+      // if (dicom_file.GetString(0x00200013, &tmp))
+      //   std::cout << "InstanceNumber:" << tmp << std::endl;
+      // if (dicom_file.GetString(0x00200012, &tmp))
+      //   std::cout << "Acquisition Number:" << tmp << std::endl;
+      // if (dicom_file.GetString(0x00201002, &tmp))
+      //   std::cout << "InstanceNumber:" << tmp << std::endl; 
       
       // setting the TestingStructuredVolume attributes
-      std::uint16_t rows;
-      std::uint16_t columns;
-      if (!dicom_file.GetUint16(dcm::tags::kRows, &rows))
-        throw std::runtime_error("error reading rows volume file");
-      if (!dicom_file.GetUint16(dcm::tags::kColumns, &columns))
-        throw std::runtime_error("error reading columns volume file");
-      dimensions  = vec3f(rows,columns,files.size());
+      // std::uint16_t rows;
+      // std::uint16_t columns;
+      // if (!dicom_file.GetUint16(dcm::tags::kRows, &rows))
+      //   throw std::runtime_error("error reading rows volume file");
+      // if (!dicom_file.GetUint16(dcm::tags::kColumns, &columns))
+      //   throw std::runtime_error("error reading columns volume file");
+      dimensions  = vec3i(width,height,files.size());
 
       // Pixel Aspect Ratio (0028,0034)
       // Pixel Padding Range Limit (0028,0121)
       // Slice Thickness (0018,0050)
-      std::string ratio;
-      std::string thickness;
-      if (!dicom_file.GetString(dcm::tags::kPixelSpacing, &ratio))
-        throw std::runtime_error("error reading columns volume file");
-      if (!dicom_file.GetString(0x00180050, &thickness))
-        throw std::runtime_error("error reading columns volume file");
-      std::cout << "ratio=" << ratio << " thickness="<< thickness << std::endl; 
+      // std::string ratio;
+      // std::string thickness;
+      // if (!dicom_file.GetString(dcm::tags::kPixelSpacing, &ratio))
+      //   throw std::runtime_error("error reading columns volume file");
+      // if (!dicom_file.GetString(0x00180050, &thickness))
+      //   throw std::runtime_error("error reading columns volume file");
+      // std::cout << "ratio=" << ratio << " thickness="<< thickness << std::endl; 
       gridSpacing = vec3f(1,1,1);
 
       // Slice Location ?
@@ -187,6 +224,7 @@ namespace openvkl {
 
       DIR           *dirp;
       struct dirent *directory;
+      bool areImages = false;
 
       dirp = opendir(filename.c_str());
       if (dirp)
@@ -200,6 +238,24 @@ namespace openvkl {
 
           closedir(dirp);
       }
+
+      if(files.size() == 0)
+      {
+        dirp = opendir(filename.c_str());
+        if (dirp)
+        {
+            while ((directory = readdir(dirp)) != NULL)
+            {
+              std::string file = filename + directory->d_name;
+              if(file.substr(file.find_last_of(".") + 1) == "jpg") 
+                files.push_back(file);
+            }
+
+            closedir(dirp);
+        }
+        areImages = true;
+      }
+
       // sorting slices
       std::sort(files.begin(), files.end()); 
 
@@ -258,37 +314,55 @@ namespace openvkl {
         // }
         // k += 4 * height * width;
 
+        if(areImages)
         {
-          dcm::DicomFile dicom_file(files[i]);
+          cimg_library::CImg<unsigned char> image(files[i].c_str());
 
-          if (!dicom_file.Load()) {
-            throw std::runtime_error("error opening dicom file");
-          }
-
-          std::string tmp;
-          if (dicom_file.GetString(0x00200013, &tmp))
-            imageNumber = std::stoi(tmp);
-            // std::cout << "InstanceNumber:" << tmp << std::endl;
-        }
-
-
-        imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
-        // Retrieve the first image (index = 0)
-        imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
-
-        // Retrieve the data handler
-        imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
-
-        for(std::uint32_t scanY(0); scanY != height; ++scanY)
-        {
-          for(std::uint32_t scanX(0); scanX != width; ++scanX)
+          for(int scanY(0); scanY != height; ++scanY)
           {
-            // For monochrome images
-            float luminance = static_cast<float>(dataHandler.getSignedLong(scanY * width + scanX));
-        
-            memcpy(&voxels[4*(scanY * width + scanX) + ((imageNumber-1) * k)], &luminance, sizeof(float));
-
+            for(int scanX(0); scanX != width; ++scanX)
+            {
+              // For monochrome images
+              float luminance = static_cast<float>((int)image(scanX,scanY,0,0));
+              memcpy(&voxels[4*(scanY * width + scanX) + (i * k)], &luminance, sizeof(float));
+            }
           }
+        }
+        else
+        {
+          {
+            dcm::DicomFile dicom_file(files[i]);
+
+            if (!dicom_file.Load()) {
+              throw std::runtime_error("error opening dicom file");
+            }
+
+            std::string tmp;
+            if (dicom_file.GetString(0x00200013, &tmp))
+              imageNumber = std::stoi(tmp);
+              // std::cout << "InstanceNumber:" << tmp << std::endl;
+          }
+
+
+          imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
+          // Retrieve the first image (index = 0)
+          imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
+
+          // Retrieve the data handler
+          imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
+
+          for(std::uint32_t scanY(0); scanY != height; ++scanY)
+          {
+            for(std::uint32_t scanX(0); scanX != width; ++scanX)
+            {
+              // For monochrome images
+              float luminance = static_cast<float>(dataHandler.getSignedLong(scanY * width + scanX));
+          
+              memcpy(&voxels[4*(scanY * width + scanX) + ((imageNumber-1) * k)], &luminance, sizeof(float));
+
+            }
+          }
+          
         }
 
 

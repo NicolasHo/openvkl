@@ -73,7 +73,9 @@ namespace openvkl {
       float dy_aperture = (random_float() - 0.5f) * hole;
 
       ray.org = camera.org + vec3f(dx_aperture, dy_aperture, 0.0f);
-      ray.dir = normalize((camera.org + focal * normalize(dir) * c) - ray.org) * c;
+      ray.dir =(camera.org + focal * normalize(dir) * c) - ray.org;
+      float c2  = length(ray.dir) / length(focal * normalize(dir) * c);
+      ray.dir = normalize(ray.dir) * c * c2;
 
       return ray;
     };
