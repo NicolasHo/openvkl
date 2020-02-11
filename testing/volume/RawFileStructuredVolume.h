@@ -114,12 +114,12 @@ namespace openvkl {
 
       if(files.size() == 0)
       {
-        dirp = opendir(filename.c_str());
+        dirp = opendir((filename + "/CTScanData/").c_str());
         if (dirp)
         {
             while ((directory = readdir(dirp)) != NULL)
             {
-              std::string file = filename + directory->d_name;
+              std::string file = filename + "/CTScanData/" + directory->d_name;
               if(file.substr(file.find_last_of(".") + 1) == "jpg") 
                 files.push_back(file);
             }
@@ -207,7 +207,7 @@ namespace openvkl {
       gridType    = "structured_regular";
 
       // Pixel Representation (0028,0103)
-      voxelType   = VKL_FLOAT;
+      voxelType   = VKL_USHORT;
 
       _gridType     = gridType;
       _dimensions   = dimensions;
@@ -221,6 +221,7 @@ namespace openvkl {
       
       // generation of the files list
       std::vector<std::string> files; 
+      std::vector<std::string> segm; 
 
       DIR           *dirp;
       struct dirent *directory;
@@ -241,14 +242,19 @@ namespace openvkl {
 
       if(files.size() == 0)
       {
-        dirp = opendir(filename.c_str());
+        dirp = opendir((filename + "/CTScanData").c_str());
         if (dirp)
         {
             while ((directory = readdir(dirp)) != NULL)
             {
-              std::string file = filename + directory->d_name;
+              std::string file = filename + "/CTScanData/" + directory->d_name;
               if(file.substr(file.find_last_of(".") + 1) == "jpg") 
                 files.push_back(file);
+                
+              std::string file_seg = filename + "/LabelledData/" + directory->d_name;
+              if(file_seg.substr(file_seg.find_last_of(".") + 1) == "jpg") 
+                segm.push_back(file_seg);
+                
             }
 
             closedir(dirp);
@@ -257,7 +263,9 @@ namespace openvkl {
       }
 
       // sorting slices
-      std::sort(files.begin(), files.end()); 
+      std::sort(files.begin(), files.end());
+      if(segm.size() != 0) 
+        std::sort(segm.begin(), segm.end()); 
 
       // creation of the voxels list
       auto numValues = this->dimensions.long_product();
@@ -270,7 +278,7 @@ namespace openvkl {
       std::uint32_t width = this->dimensions.x;
       std::uint32_t height = this->dimensions.y;
 
-      uint i, k = 4 * height * width;
+      uint i, k = sizeOfVKLDataType(voxelType) * height * width;
       int imageNumber;
 
       for (i=0; i<files.size(); i++)
@@ -317,14 +325,20 @@ namespace openvkl {
         if(areImages)
         {
           cimg_library::CImg<unsigned char> image(files[i].c_str());
+          cimg_library::CImg<unsigned char> image_seg;
+          if(segm.size() != 0) 
+            image_seg = cimg_library::CImg<unsigned char>(segm[i].c_str());
 
           for(int scanY(0); scanY != height; ++scanY)
           {
             for(int scanX(0); scanX != width; ++scanX)
             {
-              // For monochrome images
-              float luminance = static_cast<float>((int)image(scanX,scanY,0,0));
-              memcpy(&voxels[4*(scanY * width + scanX) + (i * k)], &luminance, sizeof(float));
+              uint16_t luminance = static_cast<uint16_t>((int)image(scanX,scanY,0,0));
+
+              // if(segm.size() != 0) 
+              //   luminance += static_cast<uint16_t>((int)image_seg(scanX,scanY,0,0) << 8);
+
+              memcpy(&voxels[sizeOfVKLDataType(voxelType)*(scanY * width + scanX) + (i * k)], &luminance, sizeof(uint16_t));
             }
           }
         }

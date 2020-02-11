@@ -131,17 +131,20 @@ namespace openvkl {
         {
           int id = x + fbDims.x/2 + y*fbDims.x;
 
-          float sample;
+          float sample = 0; // 0 pas necessaire
 
           const vec3f c = ray.org + j* ray.dir;
           sample        = vklComputeSample(volume, (const vkl_vec3f *)&c);
-          //vec3f pixel_color = (1-accumScale) * framebuffer[id] + accumScale * sample;
-          vec3f pixel_color = sample;
+          
+          // vec3f pixel_color = static_cast<float>(static_cast<int>(sample) & 0xff );
+          //std::cout << sample << " | " << static_cast<int>(sample) << " | " << (static_cast<int>(sample) & 0xff) << " | " << (static_cast<int>(sample)>> 8) << " | " <<  sample-pixel_color << std::endl;
 
           if(vRays)
             framebuffer[id] = vec3f(r, g, b);
+            // framebuffer[id] = static_cast<float>(static_cast<uint16_t>(sample) >> 8 )/255.0f;
           else
-            framebuffer[id] =  (1-accumScale) * framebuffer[id] + accumScale * (pixel_color/255);
+            // framebuffer[id] = static_cast<float>(static_cast<uint16_t>(sample) & 0xff )/255.0f;
+            framebuffer[id] =  (1-accumScale) * framebuffer[id] + accumScale * (sample/255.0f);
 
           // linear to sRGB color space conversion
           // framebuffer[id] = vec3f(pow(framebuffer[id].x, 1.f / 2.2f),
