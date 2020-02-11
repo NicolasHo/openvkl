@@ -295,6 +295,15 @@ template_getVoxel(double, uniform);
   {                                                                        \
     uniform uint8 *uniform base = (uniform uint8 * uniform)(basePtr);      \
     return *((uniform type *)((base + baseOfs) + offset));                 \
+  }                                                                        \
+  inline univary float accessArrayWithOffset(const type *uniform basePtr,                   \
+                                             const uniform uint64 baseOfs,                  \
+                                             const univary uint32 offset,                   \
+                                             univary uint8 *segmentation)                   \
+  {                                                                                         \
+    uniform uint8 *uniform base = (uniform uint8 * uniform)(basePtr);                       \
+    *segmentation = *((uniform uint8*)((base + baseOfs) + offset + sizeof(uniform uint8))); \
+    return *((uniform type *)((base + baseOfs) + offset));                                  \
   }
 
 template_accessArray(uint8, varying);

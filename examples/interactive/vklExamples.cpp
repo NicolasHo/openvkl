@@ -199,7 +199,7 @@ void usage(const char *progname)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, const char **argv)
 {
-  std::string rendererType("density_pathtracer");
+  std::string rendererType("ray_march_iterator");
   std::string gridType("structured_regular");
   vec3i dimensions(128);
   vec3f gridOrigin(ospcommon::nan);
@@ -411,11 +411,12 @@ int main(int argc, const char **argv)
       vec2i{1024, 1024}, volume, rendererType);
 
   auto &renderer = glfwVKLWindow->currentRenderer();
+  glfwVKLWindow->setUseISPC(0);
 
   glfwVKLWindow->registerImGuiCallback([&]() {
     bool changed = false;
 
-    static int whichRenderer = 0;
+    static int whichRenderer = 2;
     if (ImGui::Combo(
             "renderer",
             &whichRenderer,
@@ -436,7 +437,7 @@ int main(int argc, const char **argv)
 
       glfwVKLWindow->setActiveRenderer(rendererType);
     }
-    static int useISPC = 1;
+    static int useISPC = 0;
     if (ImGui::Combo("OpenVKL API used", &useISPC, "C scalar\0ISPC\0\0")) {
       glfwVKLWindow->setUseISPC(useISPC);
       changed = true;
