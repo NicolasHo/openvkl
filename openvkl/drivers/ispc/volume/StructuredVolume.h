@@ -40,6 +40,11 @@ namespace openvkl {
                           const vvec3fn<W> &objectCoordinates,
                           vfloatn<W> &samples) const override;
 
+      void computeSampleSegV(const vintn<W> &valid,
+                          const vvec3fn<W> &objectCoordinates,
+                          vfloatn<W> &samples, 
+                          uint8 *segmentation) const override;
+                          
       void computeGradientV(const vintn<W> &valid,
                             const vvec3fn<W> &objectCoordinates,
                             vvec3fn<W> &gradients) const override;
@@ -108,6 +113,20 @@ namespace openvkl {
                                                  this->ispcEquivalent,
                                                  &objectCoordinates,
                                                  &samples);
+    }
+
+    template <int W>
+    inline void StructuredVolume<W>::computeSampleSegV(
+        const vintn<W> &valid,
+        const vvec3fn<W> &objectCoordinates,
+        vfloatn<W> &samples,
+        uint8 *segmentation) const
+    {
+      ispc::SharedStructuredVolume_sample_seg_export((const int *)&valid,
+                                                 this->ispcEquivalent,
+                                                 &objectCoordinates,
+                                                 &samples,
+                                                 segmentation);
     }
 
     template <int W>

@@ -173,8 +173,20 @@ namespace openvkl {
                                     this->ispcEquivalent,
                                     &objectCoordinates,
                                     &samples);
+    }    
+    
+    template <int W>
+    void AMRVolume<W>::computeSampleSegV(const vintn<W> &valid,
+                                      const vvec3fn<W> &objectCoordinates,
+                                      vfloatn<W> &samples,
+                                      uint8 *segmentation) const
+    {
+      ispc::AMRVolume_sample_export((const int *)&valid,
+                                    this->ispcEquivalent,
+                                    &objectCoordinates,
+                                    &samples);
     }
-
+                          
     template <int W>
     void AMRVolume<W>::computeGradientV(const vintn<W> &valid,
                                         const vvec3fn<W> &objectCoordinates,

@@ -141,8 +141,8 @@ namespace openvkl {
           //std::cout << sample << " | " << static_cast<int>(sample) << " | " << (static_cast<int>(sample) & 0xff) << " | " << (static_cast<int>(sample)>> 8) << " | " <<  sample-pixel_color << std::endl;
 
           if(vRays)
-            framebuffer[id] = vec3f(r, g, b);
-            // framebuffer[id] = static_cast<float>(static_cast<uint16_t>(sample) >> 8 )/255.0f;
+            // framebuffer[id] = vec3f(r, g, b);
+            framebuffer[id] = static_cast<float>(segmentation )/255.0f;
           else
             // framebuffer[id] = static_cast<float>(static_cast<uint16_t>(sample) & 0xff )/255.0f;
             framebuffer[id] =  (1-accumScale) * framebuffer[id] + accumScale * (sample/255.0f);

@@ -337,7 +337,7 @@ namespace openvkl {
                                        uint8 *segmentation)
     {
       auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
-      volumeObject.computeSample(objectCoordinates, sample);
+      volumeObject.computeSampleSeg(objectCoordinates, sample, segmentation);
     }
 
 #define __define_computeGradientN(WIDTH)              \

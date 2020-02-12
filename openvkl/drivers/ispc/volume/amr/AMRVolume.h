@@ -38,6 +38,12 @@ namespace openvkl {
       void computeSampleV(const vintn<W> &valid,
                           const vvec3fn<W> &objectCoordinates,
                           vfloatn<W> &samples) const override;
+
+      void computeSampleSegV(const vintn<W> &valid,
+                          const vvec3fn<W> &objectCoordinates,
+                          vfloatn<W> &samples, 
+                          uint8 *segmentation) const override;
+
       void computeGradientV(const vintn<W> &valid,
                             const vvec3fn<W> &objectCoordinates,
                             vvec3fn<W> &gradients) const override;

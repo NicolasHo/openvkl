@@ -341,7 +341,7 @@ namespace openvkl {
               if(segm.size() != 0) 
               {
                 uint8_t segmentation = static_cast<uint8_t>((int)image_seg(scanX,scanY,0,0));
-                memcpy(&voxels[sizeOfVKLDataType(voxelType) + voxel_size*(scanY * width + scanX) + (i * k)], &luminance, sizeof(uint8_t));
+                memcpy(&voxels[sizeOfVKLDataType(voxelType) + voxel_size*(scanY * width + scanX) + (i * k)], &segmentation, sizeof(uint8_t));
               }
 
             }
