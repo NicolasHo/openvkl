@@ -607,6 +607,22 @@ extern "C" float vklComputeSample(
 }
 OPENVKL_CATCH_END(ospcommon::math::nan)
 
+extern "C" float vklComputeSampleSeg(
+    VKLVolume volume, const vkl_vec3f *objectCoordinates, uint8_t *segmentation) OPENVKL_CATCH_BEGIN
+{
+  ASSERT_DRIVER();
+  constexpr int valid = 1;
+  float sample;
+  openvkl::api::currentDriver().computeSampleSeg1(
+      &valid,
+      volume,
+      reinterpret_cast<const vvec3fn<1> &>(*objectCoordinates),
+      reinterpret_cast<vfloatn<1> &>(sample),
+      reinterpret_cast<uint8 *>(segmentation));
+  return sample;
+}
+OPENVKL_CATCH_END(ospcommon::math::nan)
+
 #define __define_vklComputeSampleN(WIDTH)                             \
   extern "C" void vklComputeSample##WIDTH(                            \
       const int *valid,                                               \

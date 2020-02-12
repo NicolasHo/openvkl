@@ -49,4 +49,4 @@ if (BUILD_BENCHMARKS)
   add_subdirectory(external/benchmark)
 endif()
 
-add_subdirectory(apps)
+# add_subdirectory(apps)

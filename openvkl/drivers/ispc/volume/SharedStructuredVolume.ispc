@@ -911,7 +911,8 @@ export uniform bool SharedStructuredVolume_set(
     print("#vkl:shared_structured_volume: unknown voxelType\n");
     return false;
   }
-
+  bytesPerVoxel += sizeof(uniform uint8);
+  
   const uniform uint64 bytesPerLine   = bytesPerVoxel * dimensions.x;
   const uniform uint64 bytesPerSlice  = bytesPerLine * dimensions.y;
   const uniform uint64 bytesPerVolume = bytesPerSlice * dimensions.z;

@@ -172,6 +172,20 @@ namespace openvkl {
 
 #undef __define_computeSampleN
 
+#define __define_computeSampleSegN(WIDTH)                            \
+  void computeSampleSeg##WIDTH(const int *valid,                     \
+                            VKLVolume volume,                        \
+                            const vvec3fn<WIDTH> &objectCoordinates, \
+                            vfloatn<WIDTH> &samples,                 \
+                            uint8 *segmentation) override;
+
+      __define_computeSampleSegN(1);
+      __define_computeSampleSegN(4);
+      __define_computeSampleSegN(8);
+      __define_computeSampleSegN(16);
+
+#undef __define_computeSampleSegN
+
 #define __define_computeGradientN(WIDTH)                               \
   void computeGradient##WIDTH(const int *valid,                        \
                               VKLVolume volume,                        \
@@ -305,6 +319,22 @@ namespace openvkl {
           VKLVolume volume,
           const vvec3fn<OW> &objectCoordinates,
           vfloatn<OW> &samples);
+
+      template <int OW>
+      typename std::enable_if<(OW <= W), void>::type computeSampleSegAnyWidth(
+          const int *valid,
+          VKLVolume volume,
+          const vvec3fn<OW> &objectCoordinates,
+          vfloatn<OW> &samples,
+          uint8 *segmentation);
+
+      template <int OW>
+      typename std::enable_if<(OW > W), void>::type computeSampleSegAnyWidth(
+          const int *valid,
+          VKLVolume volume,
+          const vvec3fn<OW> &objectCoordinates,
+          vfloatn<OW> &samples,
+          uint8 *segmentation);
 
       template <int OW>
       typename std::enable_if<(OW <= W), void>::type computeGradientAnyWidth(

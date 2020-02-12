@@ -308,6 +308,38 @@ namespace openvkl {
       volumeObject.computeSample(objectCoordinates, sample);
     }
 
+
+
+#define __define_computeSampleSegN(WIDTH)                                       \
+  template <int W>                                                              \
+  void ISPCDriver<W>::computeSampleSeg##WIDTH(                                  \
+      const int *valid,                                                         \
+      VKLVolume volume,                                                         \
+      const vvec3fn<WIDTH> &objectCoordinates,                                  \
+      vfloatn<WIDTH> &samples,                                                  \
+      uint8 *segmentation)                                                      \
+  {                                                                             \
+    computeSampleSegAnyWidth<WIDTH>(valid, volume, objectCoordinates, samples, segmentation); \
+  }
+
+    __define_computeSampleSegN(4);
+    __define_computeSampleSegN(8);
+    __define_computeSampleSegN(16);
+
+#undef __define_computeSampleSegN
+
+    // support a fast path for scalar sampling
+    template <int W>
+    void ISPCDriver<W>::computeSampleSeg1(const int *valid,
+                                       VKLVolume volume,
+                                       const vvec3fn<1> &objectCoordinates,
+                                       vfloatn<1> &sample,
+                                       uint8 *segmentation)
+    {
+      auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
+      volumeObject.computeSample(objectCoordinates, sample);
+    }
+
 #define __define_computeGradientN(WIDTH)              \
   template <int W>                                    \
   void ISPCDriver<W>::computeGradient##WIDTH(         \
@@ -721,6 +753,65 @@ namespace openvkl {
           samples[i] = samplesW[i - packIndex * W];
       }
     }
+
+    template <int W>
+    template <int OW>
+    typename std::enable_if<(OW <= W), void>::type
+    ISPCDriver<W>::computeSampleSegAnyWidth(const int *valid,
+                                         VKLVolume volume,
+                                         const vvec3fn<OW> &objectCoordinates,
+                                         vfloatn<OW> &samples,
+                                          uint8 *segmentation)
+    {
+      auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
+
+      vvec3fn<W> ocW = static_cast<vvec3fn<W>>(objectCoordinates);
+
+      vintn<W> validW;
+      for (int i = 0; i < W; i++)
+        validW[i] = i < OW ? valid[i] : 0;
+
+      ocW.fill_inactive_lanes(validW);
+
+      vfloatn<W> samplesW;
+
+      volumeObject.computeSampleV(validW, ocW, samplesW);
+
+      for (int i = 0; i < OW; i++)
+        samples[i] = samplesW[i];
+    }
+
+    template <int W>
+    template <int OW>
+    typename std::enable_if<(OW > W), void>::type
+    ISPCDriver<W>::computeSampleSegAnyWidth(const int *valid,
+                                         VKLVolume volume,
+                                         const vvec3fn<OW> &objectCoordinates,
+                                         vfloatn<OW> &samples,
+                                          uint8 *segmentation)
+    {
+      auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
+
+      const int numPacks = OW / W + (OW % W != 0);
+
+      for (int packIndex = 0; packIndex < numPacks; packIndex++) {
+        vvec3fn<W> ocW = objectCoordinates.template extract_pack<W>(packIndex);
+
+        vintn<W> validW;
+        for (int i = packIndex * W; i < (packIndex + 1) * W && i < OW; i++)
+          validW[i - packIndex * W] = i < OW ? valid[i] : 0;
+
+        ocW.fill_inactive_lanes(validW);
+
+        vfloatn<W> samplesW;
+
+        volumeObject.computeSampleV(validW, ocW, samplesW);
+
+        for (int i = packIndex * W; i < (packIndex + 1) * W && i < OW; i++)
+          samples[i] = samplesW[i - packIndex * W];
+      }
+    }
+
 
     template <int W>
     template <int OW>

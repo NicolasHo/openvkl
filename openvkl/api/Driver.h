@@ -223,6 +223,20 @@ namespace openvkl {
 
 #undef __define_computeSampleN
 
+#define __define_computeSampleSegN(WIDTH)                            \
+  virtual void computeSampleSeg##WIDTH(const int *valid,                     \
+                            VKLVolume volume,                        \
+                            const vvec3fn<WIDTH> &objectCoordinates, \
+                            vfloatn<WIDTH> &samples,                 \
+                            uint8 *segmentation) = 0;
+
+      __define_computeSampleSegN(1);
+      __define_computeSampleSegN(4);
+      __define_computeSampleSegN(8);
+      __define_computeSampleSegN(16);
+
+#undef __define_computeSampleSegN
+
 #define __define_computeGradientN(WIDTH)                                       \
   virtual void computeGradient##WIDTH(const int *valid,                        \
                                       VKLVolume volume,                        \

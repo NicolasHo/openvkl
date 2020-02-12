@@ -70,6 +70,9 @@ OPENVKL_INTERFACE
 float vklComputeSample(VKLVolume volume, const vkl_vec3f *objectCoordinates);
 
 OPENVKL_INTERFACE
+float vklComputeSampleSeg(VKLVolume volume, const vkl_vec3f *objectCoordinates, uint8_t *segmentation);
+
+OPENVKL_INTERFACE
 void vklComputeSample4(const int *valid,
                        VKLVolume volume,
                        const vkl_vvec3f4 *objectCoordinates,

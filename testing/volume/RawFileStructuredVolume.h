@@ -269,8 +269,10 @@ namespace openvkl {
 
       // creation of the voxels list
       auto numValues = this->dimensions.long_product();
-      std::vector<unsigned char> voxels(numValues *
-                                        sizeOfVKLDataType(voxelType));
+
+
+      int voxel_size = sizeOfVKLDataType(voxelType) + sizeof(uint8_t);
+      std::vector<unsigned char> voxels(numValues *voxel_size);
 
       // loading voxels
       int imageSize = this->dimensions.x*this->dimensions.y;
@@ -278,7 +280,7 @@ namespace openvkl {
       std::uint32_t width = this->dimensions.x;
       std::uint32_t height = this->dimensions.y;
 
-      uint i, k = sizeOfVKLDataType(voxelType) * height * width;
+      uint i, k = voxel_size * height * width;
       int imageNumber;
 
       for (i=0; i<files.size(); i++)
@@ -334,11 +336,14 @@ namespace openvkl {
             for(int scanX(0); scanX != width; ++scanX)
             {
               uint16_t luminance = static_cast<uint16_t>((int)image(scanX,scanY,0,0));
+              memcpy(&voxels[voxel_size*(scanY * width + scanX) + (i * k)], &luminance, sizeof(uint16_t));
 
-              // if(segm.size() != 0) 
-              //   luminance += static_cast<uint16_t>((int)image_seg(scanX,scanY,0,0) << 8);
+              if(segm.size() != 0) 
+              {
+                uint8_t segmentation = static_cast<uint8_t>((int)image_seg(scanX,scanY,0,0));
+                memcpy(&voxels[sizeOfVKLDataType(voxelType) + voxel_size*(scanY * width + scanX) + (i * k)], &luminance, sizeof(uint8_t));
+              }
 
-              memcpy(&voxels[sizeOfVKLDataType(voxelType)*(scanY * width + scanX) + (i * k)], &luminance, sizeof(uint16_t));
             }
           }
         }
@@ -383,10 +388,7 @@ namespace openvkl {
         // throw std::runtime_error("error reading raw volume file");
         //std::cout << (i-1)*imageSize+k << std::endl;
       }
-      
-      std::cout << "numValues:" << this->dimensions.long_product() << " sizeOfVKLDataType:" << sizeOfVKLDataType(voxelType) << " voxels:" << numValues *
-                                        sizeOfVKLDataType(voxelType) << std::endl;
-      std::cout << k << "/" << this->dimensions.long_product() << " voxels" << std::endl;
+      std::cout << (i * k) << "/" << numValues * voxel_size << " bytes loaded" << std::endl;
         
       return voxels;
     
