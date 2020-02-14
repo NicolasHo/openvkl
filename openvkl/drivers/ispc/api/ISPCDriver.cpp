@@ -317,7 +317,7 @@ namespace openvkl {
       VKLVolume volume,                                                         \
       const vvec3fn<WIDTH> &objectCoordinates,                                  \
       vfloatn<WIDTH> &samples,                                                  \
-      uint8 *segmentation)                                                      \
+      vuchar3<WIDTH> &segmentation)                                                      \
   {                                                                             \
     computeSampleSegAnyWidth<WIDTH>(valid, volume, objectCoordinates, samples, segmentation); \
   }
@@ -334,7 +334,7 @@ namespace openvkl {
                                        VKLVolume volume,
                                        const vvec3fn<1> &objectCoordinates,
                                        vfloatn<1> &sample,
-                                       uint8 *segmentation)
+                                       vuchar3<1> &segmentation)
     {
       auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
       volumeObject.computeSampleSeg(objectCoordinates, sample, segmentation);
@@ -761,7 +761,7 @@ namespace openvkl {
                                          VKLVolume volume,
                                          const vvec3fn<OW> &objectCoordinates,
                                          vfloatn<OW> &samples,
-                                          uint8 *segmentation)
+                                         vuchar3<OW> &segmentation)
     {
       auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
 
@@ -788,7 +788,7 @@ namespace openvkl {
                                          VKLVolume volume,
                                          const vvec3fn<OW> &objectCoordinates,
                                          vfloatn<OW> &samples,
-                                          uint8 *segmentation)
+                                         vuchar3<OW> &segmentation)
     {
       auto &volumeObject = referenceFromHandle<Volume<W>>(volume);
 

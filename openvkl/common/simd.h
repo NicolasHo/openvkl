@@ -128,6 +128,58 @@ namespace openvkl {
   };
 
   template <int W>
+  struct alignas(simd_alignment_for_width(W)) vucharn
+  {
+    uint8_t v[W];
+
+    vucharn<W>() = default;
+
+    uint8_t &operator[](std::size_t index)
+    {
+      return v[index];
+    }
+
+    const uint8_t &operator[](std::size_t index) const
+    {
+      return v[index];
+    }
+
+    vucharn<W>(const vucharn<W> &o)
+    {
+      for (int i = 0; i < W; i++) {
+        v[i] = o[i];
+      }
+    }
+  };
+
+  template <int W>
+  struct alignas(simd_alignment_for_width(W)) vuchar3
+  {
+    vucharn<W> x;
+    vucharn<W> y;
+    vucharn<W> z;
+
+    vuchar3<W>() = default;
+    vuchar3<W>(const vuchar3<W> &v) : x(v.x), y(v.y), z(v.z) {}
+    
+    template <int OW>
+    explicit operator vuchar3<OW>() const
+    {
+      static_assert(W <= OW, "can only up-convert vuchar3 types");
+
+      vuchar3<OW> newVec;
+
+      for (int i = 0; i < W; i++) {
+        newVec.x[i] = x[i];
+        newVec.y[i] = y[i];
+        newVec.z[i] = z[i];
+      }
+
+      return newVec;
+    }
+  };
+
+  template <int W>
   struct alignas(simd_alignment_for_width(W)) vvec3fn
   {
     vfloatn<W> x;

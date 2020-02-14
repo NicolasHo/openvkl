@@ -22,5 +22,5 @@ struct Volume
       const void *uniform _self, const varying vec3f &objectCoordinates);
 
   varying float (*uniform computeSampleSeg)(
-      const void *uniform _self, const varying vec3f &objectCoordinates, varying uint8 *segmentation);
+      const void *uniform _self, const varying vec3f &objectCoordinates, varying vec3uc &segmentation);
 };

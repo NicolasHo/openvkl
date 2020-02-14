@@ -75,7 +75,8 @@ namespace openvkl {
 
         }
 
-        tasking::parallel_for((size_t)nbrays, [&](size_t i) {
+        tasking::parallel_for((size_t)nbrays, [&](size_t i) 
+        {
 
           auto pixel = pixelIndices.reshape((i*fbDims.x/nbrays) + (fbDims.y/2)*fbDims.x);
 
@@ -97,6 +98,7 @@ namespace openvkl {
 #ifndef RAYMARCHER_ITERATOR_TESTS
     vec3f RayMarchIterator::renderPixel(Ray &ray, const vec4i &sampleID)
     {
+      double i0 = 1.0;
       float accumScale = 1.f / (frameID + 1);
       auto fbDims = pixelIndices.dimensions();
 
@@ -134,15 +136,27 @@ namespace openvkl {
           float sample = 0; // 0 pas necessaire
 
           const vec3f c = ray.org + j* ray.dir;
-          uint8_t segmentation;  
-          sample        = vklComputeSampleSeg(volume, (const vkl_vec3f *)&c, &segmentation);
+          vec3uc segmentation;  
+          sample        = i0 * vklComputeSampleSeg(volume, (const vkl_vec3f *)&c, (vkl_vec3uc *)&segmentation);
           
           // vec3f pixel_color = static_cast<float>(static_cast<int>(sample) & 0xff );
           //std::cout << sample << " | " << static_cast<int>(sample) << " | " << (static_cast<int>(sample) & 0xff) << " | " << (static_cast<int>(sample)>> 8) << " | " <<  sample-pixel_color << std::endl;
+          // vec3f seg(0,0,0);
+
+          // if ((segmentation >> 4) == 2)
+          // {
+          //   seg.x = 1.0;
+          //   i0  /= 3;
+          // }
+          // else if ((segmentation >> 4) == 9)
+          //   seg.y = 1.0;
+          // else if ((segmentation >> 4) == 1)
+          //   seg.z = 1.0;
 
           if(vRays)
             // framebuffer[id] = vec3f(r, g, b);
-            framebuffer[id] = static_cast<float>(segmentation )/255.0f;
+            framebuffer[id] = static_cast<float>(segmentation.x)/255.0f;
+            // framebuffer[id] = seg;
           else
             // framebuffer[id] = static_cast<float>(static_cast<uint16_t>(sample) & 0xff )/255.0f;
             framebuffer[id] =  (1-accumScale) * framebuffer[id] + accumScale * (sample/255.0f);

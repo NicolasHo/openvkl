@@ -60,6 +60,8 @@ namespace openvkl {
       std::vector<unsigned char> generateVoxels() override;
       std::vector<unsigned char> generateVoxelsDicom();
 
+      uint8_t getSegmentationId(uint8_t color);
+
      private:
       std::string filename;
     };
@@ -271,7 +273,7 @@ namespace openvkl {
       auto numValues = this->dimensions.long_product();
 
 
-      int voxel_size = sizeOfVKLDataType(voxelType) + sizeof(uint8_t);
+      int voxel_size = sizeOfVKLDataType(voxelType) + 3*sizeof(uint8_t);
       std::vector<unsigned char> voxels(numValues *voxel_size);
 
       // loading voxels
@@ -285,44 +287,6 @@ namespace openvkl {
 
       for (i=0; i<files.size(); i++)
       {  
-
-        // dcm::DicomFile dicom_file(files[i]);
-
-        // if (!dicom_file.Load()) {
-        //   throw std::runtime_error("error opening raw volume file");
-        // }
-
-        // const dcm::DataElement* element = dicom_file.Get(dcm::tags::kPixelData);
-        // k = 0;
-        // for (std::vector<char>::const_iterator j = element->buffer().begin(); j != element->buffer().end(); ++(++j))
-        // {
-        //   voxels[i*imageSize+k] = (unsigned char)i;
-        //   k += 1;
-        // }
-
-
-
-        // imebra::DataSet loadedDataSet(imebra::CodecFactory::load(files[i], 2048));
-        // // Retrieve the first image (index = 0)
-        // imebra::Image image(loadedDataSet.getImageApplyModalityTransform(0));
-
-        // // Retrieve the data handler
-        // imebra::ReadingDataHandlerNumeric dataHandler(image.getReadingDataHandler());
-
-        // for(std::uint32_t scanY(0); scanY != height; ++scanY)
-        // {
-        //   for(std::uint32_t scanX(0); scanX != width; ++scanX)
-        //   {
-        //     // For monochrome images
-        //     std::int32_t luminance = dataHandler.getSignedLong(scanY * width + scanX);
-        //     //voxels[4*(scanY * width + scanX) + k] = luminance;
-        //     voxels[4*(scanY * width + scanX) + k] = (luminance >> 24) & 0xFF;
-        //     voxels[4*(scanY * width + scanX) + k +1] = (luminance >> 16) & 0xFF;
-        //     voxels[4*(scanY * width + scanX) + k +2] = (luminance >> 8) & 0xFF;
-        //     voxels[4*(scanY * width + scanX) + k +3] = luminance & 0xFF;
-        //   }
-        // }
-        // k += 4 * height * width;
 
         if(areImages)
         {
@@ -340,8 +304,12 @@ namespace openvkl {
 
               if(segm.size() != 0) 
               {
-                uint8_t segmentation = static_cast<uint8_t>((int)image_seg(scanX,scanY,0,0));
+                uint8_t segmentation = getSegmentationId((int)image_seg(scanX,scanY,0,0));
                 memcpy(&voxels[sizeOfVKLDataType(voxelType) + voxel_size*(scanY * width + scanX) + (i * k)], &segmentation, sizeof(uint8_t));
+                // uint8_t normal = 100;
+                // memcpy(&voxels[sizeOfVKLDataType(voxelType)+sizeof(uint8_t)+ voxel_size*(scanY * width + scanX) + (i * k)], &normal, sizeof(uint8_t));
+                // uint8_t noise = 200;
+                // memcpy(&voxels[sizeOfVKLDataType(voxelType)+2*sizeof(uint8_t)+ voxel_size*(scanY * width + scanX) + (i * k)], &noise, sizeof(uint8_t));
               }
 
             }
@@ -420,6 +388,43 @@ namespace openvkl {
       }
 
       return voxels;
+    }
+
+    inline uint8_t RawFileStructuredVolume::getSegmentationId(uint8_t color)
+    {
+      switch (color)
+      {
+      case 125: // artery 
+        return 1 << 4 ;
+      case 54: // bone 
+        return 2 << 4 ;
+      case 210: // gallbladder 
+        return 3 << 4 ;
+      case 97: // liver 
+        return 4 << 4 ;
+      case 15: // portalvein 
+        return 5 << 4 ;
+      case 19: // venacava 
+        return 6 << 4 ;
+      case 139: // ???
+        return 7 << 4 ;
+      case 154: // ??? 
+        return 8 << 4 ;
+      case 253: // ??? 
+        return 9 << 4 ;
+      case 168: // ??? 
+        return 10 << 4 ;
+      case 239: // ??? 
+        return 11 << 4 ;
+      case 100: // ??? 
+      case 101:  
+      case 102:  
+      case 103:  
+      case 104:  
+        return 12 << 4 ;
+      default:
+        return 0;
+      }
     }
 
   }  // namespace testing

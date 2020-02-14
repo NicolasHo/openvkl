@@ -685,7 +685,7 @@ template_sample_64(uniform);
 #define template_sample_seg_32(type, univary)                                  \
   inline univary float SSV_sample_seg_##type##_##univary##_32(                 \
       const void *uniform _self, const univary vec3f &objectCoordinates,       \
-      varying uint8 *segmentation)                                             \
+      varying vec3uc &segmentation)                                             \
   {                                                                            \
     const SharedStructuredVolume *uniform self =                               \
         (const SharedStructuredVolume *uniform)_self;                          \
@@ -722,8 +722,12 @@ template_sample_64(uniform);
                                     voxelIndex_0.z * self->voxelOfs_dz;        \
     const type *uniform voxelData = (const type *uniform)self->voxelData;      \
                                                                                \
-    const uniform uint64 ofsseg = self->bytesPerVoxel - sizeof(uniform uint8); \
-    *segmentation = accessArraySegWithOffset(voxelData, ofsseg, voxelOfs);     \
+    const uniform uint64 ofsseg0 = self->bytesPerVoxel - 3*sizeof(uniform uint8);\
+    segmentation.x = accessArraySegWithOffset(voxelData, ofsseg0, voxelOfs);     \
+    const uniform uint64 ofsseg1 = self->bytesPerVoxel - 2*sizeof(uniform uint8);\
+    segmentation.y = accessArraySegWithOffset(voxelData, ofsseg1, voxelOfs);     \
+    const uniform uint64 ofsseg2 = self->bytesPerVoxel - sizeof(uniform uint8);  \
+    segmentation.z = accessArraySegWithOffset(voxelData, ofsseg2, voxelOfs);     \
                                                                                \
     const uniform uint64 ofs000   = 0;                                         \
     const uniform uint64 ofs001   = self->bytesPerVoxel;                       \
@@ -780,7 +784,7 @@ template_sample_seg_32(double, uniform);
 #define template_sample_seg_64_32(type, univary)                               \
   inline univary float SSV_sample_seg_##type##_##univary##_64_32(              \
       const void *uniform _self, const univary vec3f &objectCoordinates,       \
-      varying uint8 *segmentation)                                             \
+      varying vec3uc &segmentation)                                             \
   {                                                                            \
     const SharedStructuredVolume *uniform self =                               \
         (const SharedStructuredVolume *uniform)_self;                          \
@@ -821,8 +825,12 @@ template_sample_seg_32(double, uniform);
           (const type *uniform)((uniform uint8 * uniform) self->voxelData +    \
                                 sliceID * self->bytesPerSlice);                \
                                                                                \
-      const uniform uint64 ofsseg = self->bytesPerVoxel-sizeof(uniform uint8); \
-      *segmentation = accessArraySegWithOffset(voxelData, ofsseg, voxelOfs);   \
+    const uniform uint64 ofsseg0 = self->bytesPerVoxel - 3*sizeof(uniform uint8);\
+    segmentation.x = accessArraySegWithOffset(voxelData, ofsseg0, voxelOfs);     \
+    const uniform uint64 ofsseg1 = self->bytesPerVoxel - 2*sizeof(uniform uint8);\
+    segmentation.y = accessArraySegWithOffset(voxelData, ofsseg1, voxelOfs);     \
+    const uniform uint64 ofsseg2 = self->bytesPerVoxel - sizeof(uniform uint8);  \
+    segmentation.z = accessArraySegWithOffset(voxelData, ofsseg2, voxelOfs);     \
                                                                                \
       const uniform uint64 ofs000 = 0;                                         \
       const uniform uint64 ofs001 = self->bytesPerVoxel;                       \
@@ -881,7 +889,7 @@ template_sample_seg_64_32(double, uniform);
 #define template_sample_seg_64(univary)                                        \
   inline univary float SSV_sample_seg_##univary##_64(                          \
       const void *uniform _self, const univary vec3f &objectCoordinates,       \
-      varying uint8 *segmentation)                                             \
+      varying vec3uc &segmentation)                                             \
   {                                                                            \
     const SharedStructuredVolume *uniform self =                               \
         (const SharedStructuredVolume *uniform)_self;                          \
@@ -915,7 +923,6 @@ template_sample_seg_64_32(double, uniform);
     const univary vec3f fractionalLocalCoordinates =                           \
         clampedLocalCoordinates - to_float(voxelIndex_0);                      \
                                                                                \
-    *segmentation = 100;                                                       \
                                                                                \
     /* look up the voxel values to be interpolated. */                         \
     univary float voxelValue_000;                                              \
@@ -1154,9 +1161,9 @@ export void SharedStructuredVolume_sample_seg_export(
     const varying vec3f *uniform objectCoordinates =
         (const varying vec3f *uniform)_objectCoordinates;
     varying float *uniform samples = (varying float *uniform)_samples;
-    varying uint8 *uniform segmentation = (varying uint8 *uniform)_segmentation;
+    varying vec3uc *uniform segmentation = (varying vec3uc *uniform)_segmentation;
 
-    *samples = self->super.computeSampleSeg(self, *objectCoordinates, segmentation);
+    *samples = self->super.computeSampleSeg(self, *objectCoordinates, *segmentation);
   }
 }
 
@@ -1284,7 +1291,7 @@ export uniform bool SharedStructuredVolume_set(
     print("#vkl:shared_structured_volume: unknown voxelType\n");
     return false;
   }
-  bytesPerVoxel = bytesPerVoxel + sizeof(uniform uint8);
+  bytesPerVoxel = bytesPerVoxel + 3*sizeof(uniform uint8);
   
   const uniform uint64 bytesPerLine   = bytesPerVoxel * dimensions.x;
   const uniform uint64 bytesPerSlice  = bytesPerLine * dimensions.y;

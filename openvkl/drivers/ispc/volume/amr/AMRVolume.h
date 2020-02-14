@@ -42,7 +42,7 @@ namespace openvkl {
       void computeSampleSegV(const vintn<W> &valid,
                           const vvec3fn<W> &objectCoordinates,
                           vfloatn<W> &samples, 
-                          uint8 *segmentation) const override;
+                          vuchar3<W> &segmentation) const override;
 
       void computeGradientV(const vintn<W> &valid,
                             const vvec3fn<W> &objectCoordinates,

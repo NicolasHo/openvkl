@@ -179,7 +179,7 @@ namespace openvkl {
     void AMRVolume<W>::computeSampleSegV(const vintn<W> &valid,
                                       const vvec3fn<W> &objectCoordinates,
                                       vfloatn<W> &samples,
-                                      uint8 *segmentation) const
+                                      vuchar3<W> &segmentation) const
     {
       ispc::AMRVolume_sample_export((const int *)&valid,
                                     this->ispcEquivalent,

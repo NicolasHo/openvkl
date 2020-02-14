@@ -97,7 +97,7 @@ namespace openvkl {
                                  vfloatn<1> &samples) const;
 
       virtual void computeSampleSeg(const vvec3fn<1> &objectCoordinates,
-                                 vfloatn<1> &samples, uint8 *segmentation) const;
+                                 vfloatn<1> &samples, vuchar3<1> &segmentation) const;
 
       virtual void computeSampleV(const vintn<W> &valid,
                                   const vvec3fn<W> &objectCoordinates,
@@ -105,7 +105,7 @@ namespace openvkl {
 
       virtual void computeSampleSegV(const vintn<W> &valid,
                                   const vvec3fn<W> &objectCoordinates,
-                                  vfloatn<W> &samples, uint8 *segmentation) const = 0;
+                                  vfloatn<W> &samples, vuchar3<W> &segmentation) const = 0;
 
 
       virtual void computeGradientV(const vintn<W> &valid,
@@ -214,12 +214,13 @@ namespace openvkl {
 
     template <int W>
     inline void Volume<W>::computeSampleSeg(const vvec3fn<1> &objectCoordinates,
-                                         vfloatn<1> &sample, uint8 *segmentation) const
+                                         vfloatn<1> &sample, vuchar3<1> &segmentation) const
     {
       // gracefully degrade to use computeSampleV(); see
       // ISPCDriver<W>::computeSampleAnyWidth()
 
       vvec3fn<W> ocW = static_cast<vvec3fn<W>>(objectCoordinates);
+      vuchar3<W> segW = static_cast<vuchar3<W>>(segmentation);
 
       vintn<W> validW;
       for (int i = 0; i < W; i++)
@@ -229,7 +230,7 @@ namespace openvkl {
 
       vfloatn<W> samplesW;
 
-      computeSampleSegV(validW, ocW, samplesW, segmentation);
+      computeSampleSegV(validW, ocW, samplesW, segW);
       // computeSampleV(validW, ocW, samplesW);
 
       sample[0] = samplesW[0];

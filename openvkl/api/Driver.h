@@ -228,7 +228,7 @@ namespace openvkl {
                             VKLVolume volume,                        \
                             const vvec3fn<WIDTH> &objectCoordinates, \
                             vfloatn<WIDTH> &samples,                 \
-                            uint8 *segmentation) = 0;
+                            vuchar3<WIDTH> &segmentation) = 0;
 
       __define_computeSampleSegN(1);
       __define_computeSampleSegN(4);
